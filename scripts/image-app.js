@@ -2,6 +2,7 @@
   // http://stackoverflow.com/questions/10906734/how-to-upload-image-into-html5-canvas
   var original;
   var imageLoader = document.querySelector('#imageLoader');
+  var worker = new Worker('scripts/worker.js');
   imageLoader.addEventListener('change', handleImage, false);
   var canvas = document.querySelector('#image');
   var ctx = canvas.getContext('2d');
@@ -35,7 +36,7 @@
   }
 
   function manipulateImage(type) {
-    var a, b, g, i, imageData, j, length, pixel, r, ref;
+    var imageData;
     imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
     toggleButtonsAbledness();
@@ -43,20 +44,11 @@
     // Hint! This is where you should post messages to the web worker and
     // receive messages from the web worker.
 
-    length = imageData.data.length / 4;
-    for (i = j = 0, ref = length; 0 <= ref ? j <= ref : j >= ref; i = 0 <= ref ? ++j : --j) {
-      r = imageData.data[i * 4 + 0];
-      g = imageData.data[i * 4 + 1];
-      b = imageData.data[i * 4 + 2];
-      a = imageData.data[i * 4 + 3];
-      pixel = manipulate(type, r, g, b, a);
-      imageData.data[i * 4 + 0] = pixel[0];
-      imageData.data[i * 4 + 1] = pixel[1];
-      imageData.data[i * 4 + 2] = pixel[2];
-      imageData.data[i * 4 + 3] = pixel[3];
+    worker.postMessage({type, imageData});
+    worker.onmessage = function(e) {
+      toggleButtonsAbledness();
+      ctx.putImageData(e.data, 0, 0);
     }
-    toggleButtonsAbledness();
-    return ctx.putImageData(imageData, 0, 0);
   };
 
   function revertImage() {
